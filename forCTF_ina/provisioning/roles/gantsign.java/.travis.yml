@@ -1,0 +1,127 @@
+---
+language: python
+python: '2.7'
+
+matrix:
+  include:
+    - env:
+        - MOLECULE_SCENARIO=ubuntu-min-java-min-online
+        - ANSIBLE_VERSION=2.2.0
+        - DOCKER_LIB=docker-py
+    - env:
+        - MOLECULE_SCENARIO=ubuntu-min-java-max-online
+        - ANSIBLE_VERSION=2.2.0
+        - DOCKER_LIB=docker-py
+    - env:
+        - MOLECULE_SCENARIO=ubuntu-max-java-min-offline
+        - ANSIBLE_VERSION=2.4.3
+        # Limit version as workaround for: https://github.com/ansible/ansible/issues/35612
+        - DOCKER_LIB='docker<3.0'
+    - env:
+        - MOLECULE_SCENARIO=ubuntu-max-java-max-offline
+        - ANSIBLE_VERSION=2.4.3
+        # Limit version as workaround for: https://github.com/ansible/ansible/issues/35612
+        - DOCKER_LIB='docker<3.0'
+    - env:
+        - MOLECULE_SCENARIO=debian-min-java-min-online
+        - ANSIBLE_VERSION=2.2.0
+        - DOCKER_LIB=docker-py
+    - env:
+        - MOLECULE_SCENARIO=debian-min-java-max-online
+        - ANSIBLE_VERSION=2.2.0
+        - DOCKER_LIB=docker-py
+    - env:
+        - MOLECULE_SCENARIO=debian-max-java-min-offline
+        - ANSIBLE_VERSION=2.4.3
+        # Limit version as workaround for: https://github.com/ansible/ansible/issues/35612
+        - DOCKER_LIB='docker<3.0'
+    - env:
+        - MOLECULE_SCENARIO=debian-max-java-max-offline
+        - ANSIBLE_VERSION=2.4.3
+        # Limit version as workaround for: https://github.com/ansible/ansible/issues/35612
+        - DOCKER_LIB='docker<3.0'
+    - env:
+        - MOLECULE_SCENARIO=centos-min-java-min-online
+        - ANSIBLE_VERSION=2.2.0
+        - DOCKER_LIB=docker-py
+    - env:
+        - MOLECULE_SCENARIO=centos-min-java-max-online
+        - ANSIBLE_VERSION=2.2.0
+        - DOCKER_LIB=docker-py
+    - env:
+        - MOLECULE_SCENARIO=centos-max-java-min-offline
+        - ANSIBLE_VERSION=2.4.3
+        # Limit version as workaround for: https://github.com/ansible/ansible/issues/35612
+        - DOCKER_LIB='docker<3.0'
+    - env:
+        - MOLECULE_SCENARIO=centos-max-java-max-offline
+        - ANSIBLE_VERSION=2.4.3
+        # Limit version as workaround for: https://github.com/ansible/ansible/issues/35612
+        - DOCKER_LIB='docker<3.0'
+    - env:
+        - MOLECULE_SCENARIO=fedora-java-min-online
+        - ANSIBLE_VERSION=2.2.0
+        - DOCKER_LIB=docker-py
+    - env:
+        - MOLECULE_SCENARIO=opensuse-java-min-online
+        - ANSIBLE_VERSION=2.2.0
+        - DOCKER_LIB=docker-py
+    - env:
+        - MOLECULE_SCENARIO=fedora-java-min-online
+        - ANSIBLE_VERSION=2.4.3
+        # Limit version as workaround for: https://github.com/ansible/ansible/issues/35612
+        - DOCKER_LIB='docker<3.0'
+    - env:
+        - MOLECULE_SCENARIO=opensuse-java-min-online
+        - ANSIBLE_VERSION=2.4.3
+        # Limit version as workaround for: https://github.com/ansible/ansible/issues/35612
+        - DOCKER_LIB='docker<3.0'
+
+# Require the standard build environment
+sudo: required
+
+# Require Ubuntu 14.04
+dist: trusty
+
+# Require Docker
+services:
+  - docker
+
+# Cache Ansible and Molecule to speed things up
+cache:
+  - pip
+
+before_install:
+  - sudo apt-get -qq update
+  - sudo apt-get install -o Dpkg::Options::='--force-confold' --force-yes -y docker-ce
+
+install:
+  # Install Ansible
+  - pip install "ansible~=$ANSIBLE_VERSION"
+
+  # Install Python API for Docker (required by Molecule Docker driver)
+  - pip install "$DOCKER_LIB"
+
+  # Install Molecule
+  - pip install "molecule==2.12.1"
+
+  # Check Ansible version
+  - ansible --version
+
+  # Check Molecule version
+  - molecule --version
+
+  # Build the Docker images
+  - molecule create --scenario-name=$MOLECULE_SCENARIO
+  - molecule destroy --scenario-name=$MOLECULE_SCENARIO
+
+script:
+  - molecule test --scenario-name=$MOLECULE_SCENARIO
+
+branches:
+  only:
+    - master
+    - /^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)([\.\-].*)?$/
+
+notifications:
+  webhooks: https://galaxy.ansible.com/api/v1/notifications/
